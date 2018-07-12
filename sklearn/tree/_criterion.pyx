@@ -21,6 +21,7 @@ from libc.stdlib cimport free
 from libc.string cimport memcpy
 from libc.string cimport memset
 from libc.math cimport fabs
+from libc.stdio cimport printf
 
 import numpy as np
 cimport numpy as np
@@ -213,7 +214,9 @@ cdef class ClassificationCriterion(Criterion):
     """Abstract criterion for classification."""
 
     def __cinit__(self, SIZE_t n_outputs,
-                  np.ndarray[SIZE_t, ndim=1] n_classes):
+                  np.ndarray[SIZE_t, ndim=1] n_classes,
+                  np.ndarray[double, ndim=1] elasticities):
+        #np.ndarray[DOUBLE_t, ndim=1] elasticities):
         """Initialize attributes for this criterion.
 
         Parameters
@@ -239,6 +242,13 @@ cdef class ClassificationCriterion(Criterion):
         self.weighted_n_node_samples = 0.0
         self.weighted_n_left = 0.0
         self.weighted_n_right = 0.0
+
+        #I've added these lines here
+
+        cdef SIZE_t n_elas = len(elasticities)
+        self.elasticities = <double*> calloc(n_elas, sizeof(double))
+        for el_count in range(len(elasticities)):
+          self.elasticities[el_count] = elasticities[el_count]
 
         # Count labels for each output
         self.sum_total = NULL
@@ -655,6 +665,7 @@ cdef class Gini(ClassificationCriterion):
         """
 
         cdef SIZE_t* n_classes = self.n_classes
+        #cdef SIZE_t* elasticities = self.elasticities
         cdef double* sum_left = self.sum_left
         cdef double* sum_right = self.sum_right
         cdef double gini_left = 0.0
@@ -689,98 +700,110 @@ cdef class Gini(ClassificationCriterion):
         impurity_right[0] = gini_right / self.n_outputs
 
 
+
 cdef class ElasticGini(ClassificationCriterion):
-            r"""Elastic Gini Index impurity criterion.
+    r"""Gini Index impurity criterion.
 
-            This handles cases where the target is a classification taking values
-            0, 1, ... K-2, K-1. If node m represents a region Rm with Nm observations,
-            then let
+    This handles cases where the target is a classification taking values
+    0, 1, ... K-2, K-1. If node m represents a region Rm with Nm observations,
+    then let
 
-                count_k = 1/ Nm \sum_{x_i in Rm} I(yi = k)
+        count_k = 1/ Nm \sum_{x_i in Rm} I(yi = k)
 
-            be the proportion of class k observations in node m.
+    be the proportion of class k observations in node m.
 
-            The Gini Index is then defined as:
+    The Gini Index is then defined as:
 
-                index = \sum_{k=0}^{K-1} count_k (1 - count_k)
-                      = 1 - \sum_{k=0}^{K-1} count_k ** 2
-            """
+        index = \sum_{k=0}^{K-1} count_k (1 - count_k)
+              = 1 - \sum_{k=0}^{K-1} count_k ** 2
+    """
 
-            cdef double node_impurity(self) nogil:
-                """Evaluate the impurity of the current node, i.e. the impurity of
-                samples[start:end] using the Gini criterion."""
+    cdef double node_impurity(self) nogil:
+        """Evaluate the impurity of the current node, i.e. the impurity of
+        samples[start:end] using the Gini criterion."""
 
 
-                cdef SIZE_t* n_classes = self.n_classes
-                cdef double* sum_total = self.sum_total
-                cdef double gini = 0.0
-                cdef double sq_count
-                cdef double count_k
-                cdef SIZE_t k
-                cdef SIZE_t c
+        cdef SIZE_t* n_classes = self.n_classes
+        cdef double* elasticities = self.elasticities #TWEAK THIS
+        cdef double* sum_total = self.sum_total
+        cdef double gini = 0.0
+        cdef double sq_count
+        cdef double count_k
+        cdef SIZE_t k
+        cdef SIZE_t c
+        printf("----------------------\n")
+        #printf("%lf\n", sum_total[0]) #THIS SEEMS TO BE WORKING
+        #printf("%u\n", self.n_outputs) #THIS SEEMS TO BE WORKING
+        printf("%lf\n", elasticities[0])
+        printf("%lf\n", elasticities[1])
+        printf("%lf\n", elasticities[2])
+        printf("----------------------\n")
 
-                for k in range(self.n_outputs):
-                    sq_count = 0.0
+        for k in range(self.n_outputs):
+            sq_count = 0.0
 
-                    for c in range(n_classes[k]):
-                        count_k = sum_total[c]
-                        sq_count += count_k * count_k
+            for c in range(n_classes[k]):
+                count_k = sum_total[c]
+                sq_count += count_k * count_k
 
-                    gini += 1.0 - sq_count / (self.weighted_n_node_samples *
-                                              self.weighted_n_node_samples)
+            gini += 1.0 - sq_count / (self.weighted_n_node_samples *
+                                      self.weighted_n_node_samples)
 
-                    sum_total += self.sum_stride
+            sum_total += self.sum_stride
 
-                return gini / self.n_outputs
+        return gini / self.n_outputs
 
-            cdef void children_impurity(self, double* impurity_left,
-                                        double* impurity_right) nogil:
-                """Evaluate the impurity in children nodes
+    cdef void children_impurity(self, double* impurity_left,
+                                double* impurity_right) nogil:
+        """Evaluate the impurity in children nodes
 
-                i.e. the impurity of the left child (samples[start:pos]) and the
-                impurity the right child (samples[pos:end]) using the Gini index.
+        i.e. the impurity of the left child (samples[start:pos]) and the
+        impurity the right child (samples[pos:end]) using the Gini index.
 
-                Parameters
-                ----------
-                impurity_left : DTYPE_t
-                    The memory address to save the impurity of the left node to
-                impurity_right : DTYPE_t
-                    The memory address to save the impurity of the right node to
-                """
+        Parameters
+        ----------
+        impurity_left : DTYPE_t
+            The memory address to save the impurity of the left node to
+        impurity_right : DTYPE_t
+            The memory address to save the impurity of the right node to
+        """
 
-                cdef SIZE_t* n_classes = self.n_classes
-                cdef double* sum_left = self.sum_left
-                cdef double* sum_right = self.sum_right
-                cdef double gini_left = 0.0
-                cdef double gini_right = 0.0
-                cdef double sq_count_left
-                cdef double sq_count_right
-                cdef double count_k
-                cdef SIZE_t k
-                cdef SIZE_t c
+        cdef SIZE_t* n_classes = self.n_classes
+        #cdef DOUBLE_t* elasticities = self.elasticities
+        cdef double* elasticities = self.elasticities
+        cdef double* sum_left = self.sum_left
+        cdef double* sum_right = self.sum_right
+        cdef double gini_left = 0.0
+        cdef double gini_right = 0.0
+        cdef double sq_count_left
+        cdef double sq_count_right
+        cdef double count_k
+        cdef SIZE_t k
+        cdef SIZE_t c
 
-                for k in range(self.n_outputs):
-                    sq_count_left = 0.0
-                    sq_count_right = 0.0
+        for k in range(self.n_outputs):
+            sq_count_left = 0.0
+            sq_count_right = 0.0
 
-                    for c in range(n_classes[k]):
-                        count_k = sum_left[c]
-                        sq_count_left += count_k * count_k
+            for c in range(n_classes[k]):
+                count_k = sum_left[c]
+                sq_count_left += count_k * count_k
 
-                        count_k = sum_right[c]
-                        sq_count_right += count_k * count_k
+                count_k = sum_right[c]
+                sq_count_right += count_k * count_k
 
-                    gini_left += 1.0 - sq_count_left / (self.weighted_n_left *
-                                                        self.weighted_n_left)
+            gini_left += 1.0 - sq_count_left / (self.weighted_n_left *
+                                                self.weighted_n_left)
 
-                    gini_right += 1.0 - sq_count_right / (self.weighted_n_right *
-                                                          self.weighted_n_right)
+            gini_right += 1.0 - sq_count_right / (self.weighted_n_right *
+                                                  self.weighted_n_right)
 
-                    sum_left += self.sum_stride
-                    sum_right += self.sum_stride
+            sum_left += self.sum_stride
+            sum_right += self.sum_stride
 
-                impurity_left[0] = gini_left / self.n_outputs
-                impurity_right[0] = gini_right / self.n_outputs
+        impurity_left[0] = gini_left / self.n_outputs
+        impurity_right[0] = gini_right / self.n_outputs
+
 
 
 cdef class RegressionCriterion(Criterion):

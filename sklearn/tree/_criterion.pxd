@@ -69,9 +69,9 @@ cdef class Criterion:
 cdef class ClassificationCriterion(Criterion):
     """Abstract criterion for classification."""
 
+    cdef DOUBLE_t* elasticities
     cdef SIZE_t* n_classes
     cdef SIZE_t sum_stride
-    cdef SIZE_t* elasticities
 
 cdef class RegressionCriterion(Criterion):
     """Abstract regression criterion."""
