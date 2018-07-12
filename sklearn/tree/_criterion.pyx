@@ -727,31 +727,43 @@ cdef class ElasticGini(ClassificationCriterion):
         cdef double* elasticities = self.elasticities #TWEAK THIS
         cdef double* sum_total = self.sum_total
         cdef double gini = 0.0
+        cdef double egini = 0.0     #MY VARIABLE
         cdef double sq_count
         cdef double count_k
+        cdef double elastic_prob    #MY VARIABLE
         cdef SIZE_t k
         cdef SIZE_t c
-        printf("----------------------\n")
+        #printf("----------------------\n")
         #printf("%lf\n", sum_total[0]) #THIS SEEMS TO BE WORKING
         #printf("%u\n", self.n_outputs) #THIS SEEMS TO BE WORKING
-        printf("%lf\n", elasticities[0])
-        printf("%lf\n", elasticities[1])
-        printf("%lf\n", elasticities[2])
-        printf("----------------------\n")
+        #printf("%lf\n", elasticities[0])
+        #printf("%lf\n", elasticities[1])
+        #printf("%lf\n", elasticities[2])
+        #printf("----------------------\n")
 
         for k in range(self.n_outputs):
             sq_count = 0.0
 
             for c in range(n_classes[k]):
-                count_k = sum_total[c]
-                sq_count += count_k * count_k
+                printf("Printing c\t")
+                printf("%u\n", c)
 
+                count_k = sum_total[c]
+                printf("total:\t%lf\t\telasticity\t%f\n", count_k, elasticities[c])
+
+                sq_count += count_k * count_k
+                elastic_prob += (count_k / self.weighted_n_node_samples) ** elasticities[c]
+
+            printf("HERE 1\n")
             gini += 1.0 - sq_count / (self.weighted_n_node_samples *
                                       self.weighted_n_node_samples)
-
+            printf("HERE 2\n")
+            egini += 1.0 - elastic_prob
+            printf("HERE 3\n")
+            printf("Gini = %lf \t EGini = %lf\n", gini, egini)
             sum_total += self.sum_stride
-
-        return gini / self.n_outputs
+            printf("HERE 4\n")
+        return egini / self.n_outputs
 
     cdef void children_impurity(self, double* impurity_left,
                                 double* impurity_right) nogil:
@@ -775,6 +787,10 @@ cdef class ElasticGini(ClassificationCriterion):
         cdef double* sum_right = self.sum_right
         cdef double gini_left = 0.0
         cdef double gini_right = 0.0
+        cdef double egini_left = 0.0
+        cdef double egini_right = 0.0
+        cdef double elastic_prob_left     #MY VARIABLE
+        cdef double elastic_prob_right    #MY VARIABLE
         cdef double sq_count_left
         cdef double sq_count_right
         cdef double count_k
@@ -786,10 +802,16 @@ cdef class ElasticGini(ClassificationCriterion):
             sq_count_right = 0.0
 
             for c in range(n_classes[k]):
+                printf("Printing c -- children nodes method\t")
+                printf("YOLO")
+                printf("%u\n", c)
+
                 count_k = sum_left[c]
+                elastic_prob_left += (count_k / self.weighted_n_left) ** elasticities[c]
                 sq_count_left += count_k * count_k
 
                 count_k = sum_right[c]
+                elastic_prob_right += (count_k / self.weighted_n_right) ** elasticities[c]
                 sq_count_right += count_k * count_k
 
             gini_left += 1.0 - sq_count_left / (self.weighted_n_left *
@@ -798,12 +820,17 @@ cdef class ElasticGini(ClassificationCriterion):
             gini_right += 1.0 - sq_count_right / (self.weighted_n_right *
                                                   self.weighted_n_right)
 
+            egini_left += 1.0 - elastic_prob_left
+            egini_right += 1.0 - elastic_prob_right
+
             sum_left += self.sum_stride
             sum_right += self.sum_stride
 
-        impurity_left[0] = gini_left / self.n_outputs
-        impurity_right[0] = gini_right / self.n_outputs
+        #impurity_left[0] = gini_left / self.n_outputs
+        #impurity_right[0] = gini_right / self.n_outputs
 
+        impurity_left[0] = egini_left / self.n_outputs
+        impurity_right[0] = egini_right / self.n_outputs
 
 
 cdef class RegressionCriterion(Criterion):
