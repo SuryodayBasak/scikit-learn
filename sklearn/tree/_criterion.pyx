@@ -676,7 +676,7 @@ cdef class Gini(ClassificationCriterion):
         cdef SIZE_t k
         cdef SIZE_t c
 
-        printf("AHOY MATEYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY\n")
+        #printf("AHOY MATEYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY\n")
         for k in range(self.n_outputs):
             sq_count_left = 0.0
             sq_count_right = 0.0
@@ -739,11 +739,11 @@ cdef class ElasticGini(ClassificationCriterion):
             elastic_prob = 0.0
 
             for c in range(n_classes[k]):
-                printf("Printing c\t")      #REMOVE THIS LINE
-                printf("%u\n", c)           #REMOVE THIS LINE
+                #printf("Printing c\t")      #REMOVE THIS LINE
+                #printf("%u\n", c)           #REMOVE THIS LINE
 
                 count_k = sum_total[c]
-                printf("total:\t%lf\t\telasticity\t%f\n", count_k, elasticities[c]) #REMOVE THIS LINE
+                #printf("total:\t%lf\t\telasticity\t%f\n", count_k, elasticities[c]) #REMOVE THIS LINE
 
                 sq_count += count_k * count_k   #REMOVE THIS LINE
                 elastic_prob += (count_k / self.weighted_n_node_samples) ** elasticities[c]
@@ -751,15 +751,15 @@ cdef class ElasticGini(ClassificationCriterion):
             gini += 1.0 - sq_count / (self.weighted_n_node_samples *
                                       self.weighted_n_node_samples)   #REMOVE THIS LINE
             egini += 1.0 - elastic_prob
-            printf("Gini = %lf \t EGini = %lf\n", gini, egini)        #REMOVE THIS LINE
-            printf("Only EGini = %lf\n", egini)                       #REMOVE THIS LINE
+            #printf("Gini = %lf \t EGini = %lf\n", gini, egini)        #REMOVE THIS LINE
+            #printf("Only EGini = %lf\n", egini)                       #REMOVE THIS LINE
             sum_total += self.sum_stride                              #REMOVE THIS LINE
-            printf("Only EGini Again = %lf\n", egini)                 #REMOVE THIS LINE
+            #printf("Only EGini Again = %lf\n", egini)                 #REMOVE THIS LINE
 
-        printf("n outputs = %d\n", self.n_outputs)                    #REMOVE THIS LINE
-        printf("EGiniEGiniEGini = %lf\n", egini)                      #REMOVE THIS LINE
-        printf("EEEEEEEEEEEEEEGini = %lf\n", egini / self.n_outputs)  #REMOVE THIS LINE
-        printf("GGGGGGGGGGGGGGGini = %lf\n", gini / self.n_outputs)   #REMOVE THIS LINE
+        #printf("n outputs = %d\n", self.n_outputs)                    #REMOVE THIS LINE
+        #printf("EGiniEGiniEGini = %lf\n", egini)                      #REMOVE THIS LINE
+        #printf("EEEEEEEEEEEEEEGini = %lf\n", egini / self.n_outputs)  #REMOVE THIS LINE
+        #printf("GGGGGGGGGGGGGGGini = %lf\n", gini / self.n_outputs)   #REMOVE THIS LINE
         return egini / self.n_outputs       #PROBLEM HERE | earlier was 'return gini / self.n_outputs'
 
     cdef void children_impurity(self, double* impurity_left,
@@ -802,17 +802,17 @@ cdef class ElasticGini(ClassificationCriterion):
             elastic_prob_right = 0
 
             for c in range(n_classes[k]):
-                printf("Printing c in child node function\t")      #REMOVE THIS LINE
-                printf("%u\n", c)                                  #REMOVE THIS LINE
+                #printf("Printing c in child node function\t")      #REMOVE THIS LINE
+                #printf("%u\n", c)                                  #REMOVE THIS LINE
 
                 count_k = sum_left[c]
-                printf("total left:\t%lf\t\telasticity\t%f\n", count_k, elasticities[c]) #REMOVE THIS LINE
+                #printf("total left:\t%lf\t\telasticity\t%f\n", count_k, elasticities[c]) #REMOVE THIS LINE
 
                 sq_count_left += count_k * count_k
                 elastic_prob_left += (count_k / self.weighted_n_left) ** elasticities[c]
 
                 count_k = sum_right[c]
-                printf("total right:\t%lf\t\telasticity\t%f\n", count_k, elasticities[c]) #REMOVE THIS LINE
+                #printf("total right:\t%lf\t\telasticity\t%f\n", count_k, elasticities[c]) #REMOVE THIS LINE
 
                 sq_count_right += count_k * count_k
                 elastic_prob_right += (count_k / self.weighted_n_right) ** elasticities[c]
@@ -825,17 +825,17 @@ cdef class ElasticGini(ClassificationCriterion):
 
             egini_left += 1.0 - elastic_prob_left
             egini_right += 1.0 - elastic_prob_right
-            printf("DONEEEEEEEEE CALCULATING EGINI IMPURITY\n")   #REMOVE THIS LINE
+            #printf("DONEEEEEEEEE CALCULATING EGINI IMPURITY\n")   #REMOVE THIS LINE
             sum_left += self.sum_stride
             sum_right += self.sum_stride
 
-        printf("egini left / n outputs = %lf\n", egini_left / self.n_outputs)   #REMOVE THIS LINE
-        printf("egini right / n outputs = %lf\n", egini_right / self.n_outputs) #REMOVE THIS LINE
+        #printf("egini left / n outputs = %lf\n", egini_left / self.n_outputs)   #REMOVE THIS LINE
+        #printf("egini right / n outputs = %lf\n", egini_right / self.n_outputs) #REMOVE THIS LINE
         #impurity_left[0] = gini_left / self.n_outputs
         #impurity_right[0] = gini_right / self.n_outputs
         impurity_left[0] = egini_left / self.n_outputs
         impurity_right[0] = egini_right / self.n_outputs
-        printf("\n")
+        #printf("\n")
 
 cdef class RegressionCriterion(Criterion):
     r"""Abstract regression criterion.
