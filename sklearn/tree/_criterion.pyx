@@ -215,7 +215,7 @@ cdef class ClassificationCriterion(Criterion):
 
     def __cinit__(self, SIZE_t n_outputs,
                   np.ndarray[SIZE_t, ndim=1] n_classes,
-                  np.ndarray[double, ndim=1] elasticities):
+                  np.ndarray[double, ndim=1] elasticities = None):
         #np.ndarray[DOUBLE_t, ndim=1] elasticities):
         """Initialize attributes for this criterion.
 
@@ -244,11 +244,16 @@ cdef class ClassificationCriterion(Criterion):
         self.weighted_n_right = 0.0
 
         #I've added these lines here
+        cdef SIZE_t n_elas = 0
 
-        cdef SIZE_t n_elas = len(elasticities)
-        self.elasticities = <double*> calloc(n_elas, sizeof(double))
-        for el_count in range(len(elasticities)):
-          self.elasticities[el_count] = elasticities[el_count]
+        if elasticities is None:
+          self.elasticities = NULL
+        else:
+          n_elas = len(elasticities)
+          if n_elas != 0:
+            self.elasticities = <double*> calloc(n_elas, sizeof(double))
+            for el_count in range(len(elasticities)):
+              self.elasticities[el_count] = elasticities[el_count]
 
         # Count labels for each output
         self.sum_total = NULL
