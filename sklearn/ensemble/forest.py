@@ -987,7 +987,8 @@ class RandomForestClassifier(ForestClassifier):
                  random_state=None,
                  verbose=0,
                  warm_start=False,
-                 class_weight=None):
+                 class_weight=None,
+                 elasticities=None):
         super(RandomForestClassifier, self).__init__(
             base_estimator=DecisionTreeClassifier(),
             n_estimators=n_estimators,
@@ -995,7 +996,7 @@ class RandomForestClassifier(ForestClassifier):
                               "min_samples_leaf", "min_weight_fraction_leaf",
                               "max_features", "max_leaf_nodes",
                               "min_impurity_decrease", "min_impurity_split",
-                              "random_state"),
+                              "random_state", "elasticities"),
             bootstrap=bootstrap,
             oob_score=oob_score,
             n_jobs=n_jobs,
@@ -1013,7 +1014,7 @@ class RandomForestClassifier(ForestClassifier):
         self.max_leaf_nodes = max_leaf_nodes
         self.min_impurity_decrease = min_impurity_decrease
         self.min_impurity_split = min_impurity_split
-
+        self.elasticities = elasticities
 
 class RandomForestRegressor(ForestRegressor):
     """A random forest regressor.
@@ -1470,7 +1471,8 @@ class ExtraTreesClassifier(ForestClassifier):
                  random_state=None,
                  verbose=0,
                  warm_start=False,
-                 class_weight=None):
+                 class_weight=None,
+                 elasticities=None):
         super(ExtraTreesClassifier, self).__init__(
             base_estimator=ExtraTreeClassifier(),
             n_estimators=n_estimators,
@@ -1478,7 +1480,7 @@ class ExtraTreesClassifier(ForestClassifier):
                               "min_samples_leaf", "min_weight_fraction_leaf",
                               "max_features", "max_leaf_nodes",
                               "min_impurity_decrease", "min_impurity_split",
-                              "random_state"),
+                              "random_state", "elasticities"),
             bootstrap=bootstrap,
             oob_score=oob_score,
             n_jobs=n_jobs,
@@ -1496,7 +1498,7 @@ class ExtraTreesClassifier(ForestClassifier):
         self.max_leaf_nodes = max_leaf_nodes
         self.min_impurity_decrease = min_impurity_decrease
         self.min_impurity_split = min_impurity_split
-
+        self.elasticities=elasticities
 
 class ExtraTreesRegressor(ForestRegressor):
     """An extra-trees regressor.
